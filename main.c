@@ -40,12 +40,13 @@ void insert(int val)
 
 
 //replacement policy methods:
-void fifo(int);
+void fifo();
 void optimal();
-
+void lru();
 //check if a ceratin page exist or NOT
-int checkExist(int,int);
-int farestOpt(int);
+int checkExist(int);
+int getFarthest();
+int getLeastRecent();
 
 int *frames;
 
@@ -55,10 +56,10 @@ int main()
     char type [8];
     pages = NULL;
 
-
     //get the number of Frames & initialize it
     scanf("%d",&numFrames);
     frames = (int*)malloc(numFrames*sizeof(int));
+
     for (i=0;i<numFrames;i++)
     {
         frames[i]=-1;
@@ -77,22 +78,22 @@ int main()
     }
 
     if(strcasecmp(type,"OPTIMAL")==0)
-    optimal(numFrames);
+    optimal();
     else if (strcasecmp(type,"FIFO")==0)
-    fifo(numFrames);
+    fifo();
     else if (strcasecmp(type,"LRU")==0)
-    fifo(numFrames);
+    lru();
     else
-    fifo(numFrames);
+    fifo();
 
     return 0;
 }
 
-//for fifo
-int checkExist(int searchingVal,int sizeOfFrames)
+int checkExist(int searchingVal)
 {
+    int sizeOfFrame= (sizeof(frames)/sizeof(*frames))+1;
     int k;
-    for (k=0;k<sizeOfFrames;k++)
+    for (k=0;k<sizeOfFrame;k++)
     {
         if(searchingVal==frames[k])
         {
@@ -103,9 +104,11 @@ int checkExist(int searchingVal,int sizeOfFrames)
     return -1;
 }
 
-void fifo(int sizeOfFrame){
+void fifo(){
 
     int i,num,pageFault=0,lastTurn=0,looping,flag=0;
+
+    int sizeOfFrame= (sizeof(frames)/sizeof(*frames))+1;
 
     printf("Replacement Policy = FIFO\n");
     printf("-------------------------------------\n");
@@ -114,38 +117,31 @@ void fifo(int sizeOfFrame){
 
     while(pages!=NULL)
     {
-        if((checkExist(pages->value,sizeOfFrame))==-1)
+        if((checkExist(pages->value))==-1)
         {
-            flag=1;
+            //flag=1;
             if( frames[(lastTurn) % sizeOfFrame] != -1)
             {
                 pageFault++;
-                printf("%d F   ",pages->value);
+                printf("%d F    ",pages->value);
             }
             else
-                printf("%d    ",pages->value);
+                printf("%d      ",pages->value);
 
             frames[(lastTurn++) % sizeOfFrame] = pages->value;
-
-            for(looping=0;looping<sizeOfFrame;looping++)
-            {
-                printf("%d ",frames[looping]);
-            }
-            printf("\n");
         }
-
-        if(flag!=1)
+        else
         {
-            printf("%d    ",pages->value);
-
-            for(looping=0;looping<sizeOfFrame;looping++)
-            {
-                printf("%d ",frames[looping]);
-            }
-                printf("\n");
+            printf("%d      ",pages->value);
         }
 
-        flag=0;
+
+        for(looping=0;looping<sizeOfFrame;looping++)
+        {
+            printf("%d ",frames[looping]);
+        }
+        printf("\n");
+
         pages=pages->next;
     }
 
@@ -154,12 +150,13 @@ void fifo(int sizeOfFrame){
 }
 
 //get the far-est return index of frame to be replaced
-int farestOpt(int sizeOfFrames)
+int getFarthest()
 {
     int i,current_counter,far=-1,index;
-    int tempFar [sizeOfFrames];
+    int sizeOfFrame= (sizeof(frames)/sizeof(*frames))+1;
+    int tempFar [sizeOfFrame];
 
-    for(i=0;i<sizeOfFrames;i++)
+    for(i=0;i<sizeOfFrame;i++)
     {
         tempFar[i]=-1;
     }
@@ -170,7 +167,7 @@ int farestOpt(int sizeOfFrames)
 
     while(loopNode != NULL)
     {
-       for(i=0;i<sizeOfFrames;i++)
+       for(i=0;i<sizeOfFrame;i++)
         {
             if(loopNode->value== frames[i])
             {
@@ -185,7 +182,7 @@ int farestOpt(int sizeOfFrames)
     }
 
     //find far-est, if not assigned in future -> replace
-    for(i=0;i<sizeOfFrames;i++)
+    for(i=0;i<sizeOfFrame;i++)
     {
         if(tempFar[i]==-1)
         return i;
@@ -203,31 +200,36 @@ int farestOpt(int sizeOfFrames)
 
 }
 
-void optimal(int sizeOfFrame)
+void optimal()
 {
     int pageFaults=0,lastTurn=0,replacedPlace,i;
+    int sizeOfFrame= (sizeof(frames)/sizeof(*frames))+1;
 
-    printf("Replacement Policy = FIFO\n");
+    printf("Replacement Policy = OPTIMAL\n");
     printf("-------------------------------------\n");
     printf("Page   Content of Frames\n");
     printf("----   -----------------\n");
 
     while(pages!=NULL)
     {
-        if(checkExist(pages->value,sizeOfFrame)==-1)
+        if(checkExist(pages->value)==-1)
         {
              if( frames[(lastTurn) % sizeOfFrame] != -1)
             {
                 pageFaults++;
-                replacedPlace=farestOpt(sizeOfFrame);
+                replacedPlace=getFarthest();
                 frames[(replacedPlace %sizeOfFrame)] = pages->value;
-                printf("%d F   ",pages->value);
+                printf("%d F    ",pages->value);
             }
             else
             {
                 frames[(lastTurn++) % sizeOfFrame] = pages->value;
-                printf("%d     ",pages->value);
+                printf("%d      ",pages->value);
             }
+        }
+        else
+        {
+            printf("%d      ",pages->value);
         }
 
         for(i=0;i<sizeOfFrame;i++)
@@ -243,3 +245,75 @@ void optimal(int sizeOfFrame)
     printf("-------------------------------------\n");
     printf("Number of page faults = %d",pageFaults);
 }
+
+int getLeastRecent(int time[])
+{
+    int index=0,smallest=time[0],i;
+    int sizeOfFrame= (sizeof(frames)/sizeof(*frames))+1;
+
+    for(i=1;i<sizeOfFrame;i++)
+    {
+        if(time[i]<smallest)
+        {
+            smallest=time[i];
+            index=i;
+        }
+    }
+
+    return index;
+}
+
+void lru()
+{
+    int pageFaults=0,valExist,lastTurn=0,lruPlace,i,counter=0;
+    int sizeOfFrame= (sizeof(frames)/sizeof(*frames))+1;
+    int* timeArray;
+    timeArray= (int*)malloc(sizeOfFrame*sizeof(int));
+
+    printf("Replacement Policy = LRU\n");
+    printf("-------------------------------------\n");
+    printf("Page   Content of Frames\n");
+    printf("----   -----------------\n");
+
+    while(pages!=NULL)
+    {
+        valExist= checkExist(pages->value);
+        if(valExist==-1)
+        {
+             if( frames[(lastTurn) % sizeOfFrame] != -1)
+            {
+                pageFaults++;
+                lruPlace=getLeastRecent(timeArray);
+                frames[(lruPlace %sizeOfFrame)] = pages->value;
+                timeArray[(lruPlace %sizeOfFrame)]= counter;
+                printf("%d F    ",pages->value);
+            }
+            else
+            {
+                frames[(lastTurn) % sizeOfFrame] = pages->value;
+                timeArray[(lastTurn %sizeOfFrame)]= counter;
+                lastTurn++;
+                printf("%d      ",pages->value);
+            }
+        }
+        else
+        {
+            timeArray[valExist%sizeOfFrame] = counter;
+            printf("%d      ",pages->value);
+        }
+
+        pages=pages->next;
+        counter++;
+
+        for(i=0;i<sizeOfFrame;i++)
+        {
+           printf("%d ",frames[i]);
+        }
+        printf("\n");
+
+    }
+
+    printf("-------------------------------------\n");
+    printf("Number of page faults = %d",pageFaults);
+}
+
