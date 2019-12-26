@@ -308,7 +308,7 @@ void lru()
     printFaults(pageFaults);
 }
 
-int getTurnAndUpdate(int start,int used[])
+/*int getTurnAndUpdate(int start,int used[])
 {
     int i=start;
 
@@ -319,19 +319,20 @@ int getTurnAndUpdate(int start,int used[])
     }
 
     return(i%sizeOfFrame);
-}
+}*/
 
 void clock()
 {
     int used[sizeOfFrame];
-    int turn=0,pageFaults=0;
+    int turn=0,pageFaults=0,check;
     int i;
 
     printHeader("CLOCK");
 
     while(pages!=NULL)
     {
-        if(checkExist(pages->value) == -1)
+	check = checkExist(pages->value);
+        if(check == -1)
         {
             if(frames[turn%sizeOfFrame]==-1)
             {
@@ -342,31 +343,24 @@ void clock()
             }
             else
             {
-                pageFaults++;
-                //if recently used=0 ->replace
-                if(used[turn%sizeOfFrame]==0)
-                {
+                    pageFaults++;
+                    while(used[turn%sizeOfFrame]==1)
+    		    {
+                          used[turn%sizeOfFrame]=0;
+                          turn++;
+                    }
                     frames[turn%sizeOfFrame]=pages->value;
                     used[turn%sizeOfFrame]=1;
-                    turn++;
-                }
-                //else check for replacement
-                else
-                {
-                    turn= getTurnAndUpdate(turn,used);
-                    frames[turn%sizeOfFrame]=pages->value;
-                    used[turn%sizeOfFrame]=1;
-                    turn++;
-                }
-                printf("%02d F   ",pages->value);
+		    turn++;
+               	    printf("%02d F   ",pages->value);
             }
         }
         else
         {
             //if lru set to 1 do nothing else:
-            if(used[turn%sizeOfFrame]==0)
+            if(used[check%sizeOfFrame]==0)
             {
-                used[turn%sizeOfFrame]=1;
+                used[check%sizeOfFrame]=1;
             }
             printf("%02d     ",pages->value);
         }
