@@ -43,10 +43,12 @@ void insert(int val)
 void fifo();
 void optimal();
 void lru();
+void clock();
 //check if a ceratin page exist or NOT
 int checkExist(int);
 int getFarthest();
 int getLeastRecent();
+int getTurnAndUpdate(int,int []);
 
 int *frames;
 
@@ -84,7 +86,7 @@ int main()
     else if (strcasecmp(type,"LRU")==0)
     lru();
     else
-    fifo();
+    clock();
 
     return 0;
 }
@@ -317,3 +319,86 @@ void lru()
     printf("Number of page faults = %d",pageFaults);
 }
 
+int getTurnAndUpdate(int start,int used[])
+{
+    int i=start;
+    int sizeOfFrame= (sizeof(frames)/sizeof(*frames))+1;
+
+    while(used[i%sizeOfFrame]==1)
+    {
+        used[i%sizeOfFrame]=0;
+        i++;
+    }
+
+    return(i%sizeOfFrame);
+
+}
+
+void clock()
+{
+    int sizeofFrame= (sizeof(frames)/sizeof(*frames))+1;
+    int used[sizeofFrame];
+    int turn=0,pageFaults=0;
+    int i;
+
+    printf("Replacement Policy = CLOCK\n");
+    printf("-------------------------------------\n");
+    printf("Page   Content of Frames\n");
+    printf("----   -----------------\n");
+
+    while(pages!=NULL)
+    {
+
+        if(checkExist(pages->value) == -1)
+        {
+            if(frames[turn%sizeofFrame]==-1)
+            {
+                frames[turn%sizeofFrame]=pages->value;
+                used[turn%sizeofFrame]=1;
+                turn++;
+                printf("%d      ",pages->value);
+            }
+            else
+            {
+                pageFaults++;
+                //if recently used=0 ->replace
+                if(used[turn%sizeofFrame]==0)
+                {
+                    frames[turn%sizeofFrame]=pages->value;
+                    used[turn%sizeofFrame]=1;
+                    turn++;
+                    printf("%d F    ",pages->value);
+                }
+                //else check for replacement
+                else
+                {
+                    turn= getTurnAndUpdate(turn,used);
+                    frames[turn%sizeofFrame]=pages->value;
+                    used[turn%sizeofFrame]=1;
+                    turn++;
+                    printf("%d F    ",pages->value);
+                }
+            }
+        }
+        else
+        {
+            //if lru set to 1 do nothing else:
+            if(used[turn%sizeofFrame]==0)
+            {
+                used[turn%sizeofFrame]=1;
+            }
+            printf("%d      ",pages->value);
+        }
+
+        pages=pages->next;
+        for(i=0;i<sizeofFrame;i++)
+        {
+            printf("%d ",frames[i]);
+        }
+        printf("\n");
+    }
+
+    printf("-------------------------------------\n");
+    printf("Number of page faults = %d",pageFaults);
+
+}
